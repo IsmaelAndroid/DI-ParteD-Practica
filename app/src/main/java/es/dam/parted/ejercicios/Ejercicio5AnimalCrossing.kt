@@ -1,24 +1,29 @@
 package es.dam.parted.ejercicios
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,11 +31,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 /*
  * ════════════════════════════════════════════════════════════════════
@@ -38,152 +49,170 @@ import androidx.compose.ui.unit.dp
  *  EJERCICIO 5 · Animal Crossing · La isla                (3,2 puntos)
  * ════════════════════════════════════════════════════════════════════
  *
- *  Vas a crear el kit de componentes de la app de una isla con vecinos.
- *  Escribe tu código en el bloque "✍ TU SOLUCIÓN".
+ *  Vas a crear el kit de componentes de la app de tu isla.
+ *  Escribe tu código en el bloque "✍ TU SOLUCIÓN" de este fichero.
+ *  No hace falta tocar nada más.
  *
- *  ── D.1 · Amistad y ChipAmistad ───────────────────────────── (0,5) ──
+ *  ── D.1 · Especie y AvatarEspecie ─────────────────────────── (0,5) ──
  *
- *  a) Crea un `enum class Amistad` con tres valores. Cada valor guarda
- *     su ETIQUETA y su COLOR:
+ *  a) Crea un `enum class Especie` con cuatro valores. Cada valor guarda
+ *     su NOMBRE, su EMOJI y su COLOR:
  *
- *       Valor   Etiqueta        Color
- *       BAJA    "Conocido"      Color(0xFF8D6E63)
- *       MEDIA   "Amigo"         Color(0xFF43A047)
- *       ALTA    "Mejor amigo"   Color(0xFFEC407A)
+ *       Valor   Nombre    Emoji   Color
+ *       GATO    "Gato"    🐱      Color(0xFFFF8A65)
+ *       PERRO   "Perro"   🐶      Color(0xFF8D6E63)
+ *       RANA    "Rana"    🐸      Color(0xFF66BB6A)
+ *       PATO    "Pato"    🦆      Color(0xFF42A5F5)
  *
- *  b) Crea el componente `ChipAmistad`: muestra la etiqueta con su color,
- *     dentro de una "píldora" con un fondo suave del mismo color.
- *     - Propiedad obligatoria: la amistad.
- *     - Opcionales: el texto (por defecto, la etiqueta) y el `modifier`.
+ *  b) Crea el componente `AvatarEspecie`: un CÍRCULO con el emoji en el
+ *     centro, un fondo suave de su color y un borde de 2 dp de su color.
+ *
+ *         ╭────╮
+ *         │ 🐸 │    ← círculo de 48 dp; el emoji, a la mitad (24 sp)
+ *         ╰────╯
+ *
+ *     - Propiedad obligatoria: la especie.
+ *     - Opcionales: el `modifier` y el tamaño (`Dp`, por defecto 48.dp).
+ *       El emoji mide la mitad del tamaño.
  *     - NO guarda estado propio.
- *     Uso: ChipAmistad(Amistad.ALTA)
- *          ChipAmistad(Amistad.BAJA, texto = "Recién llegado")
+ *     - TalkBack NO lee el emoji: lee el nombre de la especie ("Rana").
+ *     Uso: AvatarEspecie(Especie.RANA)
+ *          AvatarEspecie(Especie.PATO, tamano = 72.dp)
  *
- *     Extra: añade al enum una función `desde(puntos: Int): Amistad`
- *     dentro de un `companion object` que devuelva BAJA por debajo de
- *     40 puntos, MEDIA de 40 a 79 y ALTA de 80 en adelante.
+ *  ── D.2 · ListaDonaciones ──────────────────────────────────── (0,9) ──
  *
- *  ── D.2 · SelectorVisitante ────────────────────────────────── (0,9) ──
+ *  Una lista de casillas para elegir VARIOS bichos que donar al museo,
+ *  con un máximo:
  *
- *  Una fila con los visitantes de la isla para que el usuario invite a
- *  UNO:
- *
- *      [ Tendo ]  [ Guindo ]  ( Sócrates )  [ Ladino ]
- *                                ↑ invitado (botón relleno)
- *      Ladino no está hoy: no se puede pulsar
+ *      Elegidos: 2 de 3
+ *      [x] Mariposa
+ *      [ ] Escarabajo
+ *      [x] Luciérnaga
+ *      [ ] Tarántula
+ *      Si ya hay 3 elegidos, los demás se ven desactivados.
  *
  *  a) Completa los huecos (______) de la cabecera:
  *
  *     @Composable
- *     fun SelectorVisitante(
- *         visitantes: ______,                     // la lista de visitantes
- *         invitado: ______,                       // puede no haber ninguno
- *         onInvitar: ______,                      // avisa del visitante pulsado
- *         modifier: ______ = ______,
- *         ausentes: ______ = ______,              // por defecto, ninguno
+ *     fun ListaDonaciones(
+ *         bichos: ______<String>,                // todos los bichos
+ *         marcados: ______<String>,              // los elegidos, sin repetidos
+ *         onCambiar: (String, ______) -> ______, // bicho y si queda marcado
+ *         modifier: Modifier = ______,
+ *         maximo: Int = ______,                  // por defecto, todos
  *     ) {
  *
  *  b) Escribe el contenido del componente:
- *     1. El invitado NO se guarda dentro: se avisa con `onInvitar`.
- *     2. El invitado es un `Button`; los demás, `OutlinedButton`. Los
- *        ausentes no se pueden pulsar.
- *     3. El `modifier` se aplica a la fila.
- *     4. Para TalkBack, cada botón se anuncia como "Sócrates, invitado",
- *        "Ladino, ausente" o "Tendo, disponible".
+ *     1. Los marcados NO se guardan dentro: se avisa con `onCambiar`.
+ *     2. Arriba, el texto "Elegidos: N de M".
+ *     3. Cada bicho es una fila con un `Checkbox` y su nombre. Se puede
+ *        pulsar TODA la fila, no solo la casilla, y TalkBack la anuncia
+ *        como casilla de verificación.
+ *     4. Si ya hay `maximo` marcados, los que no están marcados se
+ *        desactivan (los marcados se pueden desmarcar siempre).
+ *     5. El `modifier` se aplica a la columna.
  *
- *  ── D.3 · CalculadoraNabos ─────────────────────────────────── (1,0) ──
+ *  ── D.3 · ConfiguradorReforma ──────────────────────────────── (1,0) ──
  *
- *  La lógica YA ESTÁ HECHA en la clase `MercadoNabos` (más abajo). Tú
- *  solo montas la interfaz y llamas a sus funciones. NO modifiques la
- *  clase.
+ *  La lógica YA ESTÁ HECHA en la clase `Reforma` (más abajo). Tú solo
+ *  montas la interfaz y llamas a sus funciones. NO modifiques la clase.
  *
- *      ┌─────────────┐  ┌─────────────┐
- *      │ Nabos       │  │ Precio      │
- *      └─────────────┘  └─────────────┘
- *      [ Comprar ] [ Vender ] [ Ganancia ]
- *      Bayas: 12000                     ( C )
- *      (precio de compra de la semana: 100 bayas)
+ *      ┌─────────────────────────────┐
+ *      │ Metros²                     │
+ *      └─────────────────────────────┘
+ *      Plantas: 2
+ *      ━━━━━━━━━━━━━●──────────────   (Slider de 1 a 3, solo enteros)
+ *      Pago al contado (-10 %)          (  ●)
+ *      Presupuesto: 36000 bayas       [ Restablecer ]
+ *      (con 20 m²: 20 · 1000 · 2 = 40000, menos el 10 %)
  *
- *  1. Los dos campos solo dejan escribir lo que `esValido` acepta: si no
- *     es válido, el campo no cambia. Sale el teclado numérico.
- *  2. Cada botón calcula con `calcular` y muestra `formatear(...)`.
- *  3. "C" vacía los dos campos y pone el resultado a 0.
- *  4. Con cada resultado válido avisa hacia fuera con `onResultado`.
- *     Quien use la calculadora puede no pasar este evento.
- *  5. Lo escrito y el resultado no se pierden al girar el móvil.
- *  6. Acepta `modifier` y un parámetro OPCIONAL `precioSemana` (Int,
- *     por defecto 100), que se pasa a `calcular`.
+ *  1. El campo solo deja escribir lo que `esValido` acepta: si no es
+ *     válido, el campo no cambia. Sale el teclado numérico.
+ *  2. Las plantas se eligen con un `Slider` de PLANTAS_MIN a PLANTAS_MAX
+ *     que solo se para en números enteros.
+ *  3. El pago al contado es un `Switch` con su texto al lado; se puede
+ *     pulsar toda la fila.
+ *  4. NO hay botón de calcular: el resultado se ve siempre al día, con
+ *     `calcular` y `formatear`.
+ *  5. Cada vez que el usuario cambia algo y el resultado es válido, avisa
+ *     hacia fuera con `onResultado`. Quien use el configurador puede no
+ *     pasar este evento.
+ *  6. "Restablecer" vuelve a los valores iniciales (campo vacío, una
+ *     planta, sin pago al contado).
+ *  7. Nada se pierde al girar el móvil. Acepta `modifier`.
  *
- *  ── D.4 · TarjetaVecino ────────────────────────────────────── (0,8) ──
+ *  ── D.4 · FilaVecino ───────────────────────────────────────── (0,8) ──
  *
  *  Tú decides sus parámetros.
  *
- *    ┌──────────────────────────────┐  ┌──────────────────────────────┐
- *    │ Canela            [Conocido] │  │ Gaspar         [Mejor amigo] │
- *    │ Perro · vive en la isla      │  │ Gato · vive en la isla       │
- *    │ ███░░░░░░░░░░░░░░░░░░        │  │ ████████████████████████     │
- *    │ Piensa en mudarse   (rojo)   │  │ ¡Te ha dado su foto!         │
- *    │                 [ Regalar ]  │  │         [ Foto conseguida ]  │
- *    └──────────────────────────────┘  └──────────────────────────────┘
+ *    ┌───────────────────────────────────────┐
+ *    │ (🐶) Canela                    (  ●)  │  ← plegada
+ *    │      ▼ Ver detalles                   │
+ *    └───────────────────────────────────────┘
+ *    ┌───────────────────────────────────────┐
+ *    │ (🐱) Rosa                      (●  )  │  ← desplegada
+ *    │      ▲ Ocultar                        │
+ *    │ Cumpleaños: 16 de marzo · Amistad: 10/100
+ *    │ Piensa en mudarse            (rojo)   │
+ *    └───────────────────────────────────────┘
  *
- *  - Muestra el nombre del vecino, su especie y su nivel de amistad con
- *    el chip de la D.1. El nivel NO se pasa: se calcula con los puntos
- *    (usa `Amistad.desde` si lo has hecho).
- *  - La barra indica los puntos de amistad (de 0 a 100).
- *  - Debajo: "Amistad: N / 100". Si tiene menos de 20 puntos, en lugar
- *    de eso pone "Piensa en mudarse" en el color de error del tema. Con
- *    100 puntos pone "¡Te ha dado su foto!".
- *  - El botón "Regalar" avisa a la pantalla. Con 100 puntos pone "Foto
- *    conseguida" y no se puede pulsar.
+ *  - Cabecera: el avatar de su especie (D.1), el nombre y un `Switch` que
+ *    dice si está invitado a la fiesta. Los invitados los decide la
+ *    PANTALLA: la fila solo avisa.
+ *  - Al pulsar la cabecera se despliega o pliega el detalle. Eso solo le
+ *    importa a la fila: lo guarda ella y no se pierde al girar.
+ *  - Detalle: "Cumpleaños: C · Amistad: N/100" y debajo "Está a gusto en
+ *    la isla". Si la amistad es menor que 20, en su lugar pone "Piensa
+ *    en mudarse" con el color de error del tema.
+ *  - TalkBack: la cabecera anuncia su acción ("Ver detalles" u
+ *    "Ocultar detalles") y el `Switch` se anuncia como "Invitado a la
+ *    fiesta".
  * ════════════════════════════════════════════════════════════════════
  */
 
 // ─── Código que te dan (NO lo modifiques) ────────────────────────────
 
-class MercadoNabos {
+class Reforma {
 
-    // Convierte el texto de un campo en número entero. null si no lo es.
+    // Límites del Slider de las plantas.
+    val PLANTAS_MIN = 1
+    val PLANTAS_MAX = 3
+
+    // Convierte el texto del campo en número entero. null si no lo es.
     fun aNumero(texto: String): Int? = texto.toIntOrNull()
 
-    // true si el texto se puede dejar escrito: vacío o un entero de 0 a 9999.
-    fun esValido(texto: String): Boolean = texto.isEmpty() || (aNumero(texto) ?: -1) in 0..9999
+    // true si el texto se puede dejar escrito: vacío o un número de hasta 2 cifras.
+    fun esValido(texto: String): Boolean = texto.isEmpty() || (texto.length <= 2 && aNumero(texto) != null)
 
-    // Según la operación: "Comprar", "Vender" o "Ganancia".
-    // - Comprar: lo que cuesta comprar los nabos a `precioSemana`. Los nabos
-    //   se venden en manojos de 10: null si la cantidad no es múltiplo de 10.
-    // - Vender: lo que te dan por los nabos al precio de hoy.
-    // - Ganancia: vender hoy menos lo que costaron (puede ser negativa).
-    // Un campo vacío cuenta como 0.
-    fun calcular(operacion: String, nabos: String, precio: String, precioSemana: Int): Int? {
-        val n = aNumero(nabos) ?: 0
-        val p = aNumero(precio) ?: 0
-        return when (operacion) {
-            "Comprar" -> if (n % 10 != 0) null else n * precioSemana
-            "Vender" -> n * p
-            "Ganancia" -> n * p - n * precioSemana
-            else -> null
-        }
+    // Presupuesto de Tom Nook en bayas: 1000 por metro cuadrado y planta.
+    // Pagando al contado, un 10 % menos. El campo vacío cuenta como 0.
+    // Devuelve null si los metros no están entre 1 y 50.
+    fun calcular(metros: String, plantas: Int, contado: Boolean): Int? {
+        val m = aNumero(metros) ?: 0
+        if (m !in 1..50) return null
+        val precio = m * 1000 * plantas
+        return if (contado) precio * 9 / 10 else precio
     }
 
-    // Texto para mostrar: el aviso de los manojos si es null y, si no, el número.
-    fun formatear(valor: Int?): String = if (valor == null) "Solo en manojos de 10" else "$valor"
+    // Texto para mostrar: "Entre 1 y 50 m²" si es null y "N bayas" si no.
+    fun formatear(valor: Int?): String = if (valor == null) "Entre 1 y 50 m²" else "$valor bayas"
 }
 
 // ─── ✍ TU SOLUCIÓN ───────────────────────────────────────────────────
 
-// D.1 a) enum class Amistad
+// D.1 a) enum class Especie
 
 
-// D.1 b) ChipAmistad
+// D.1 b) AvatarEspecie
 
 
-// D.2 a) y b) SelectorVisitante (copia la cabecera con los huecos rellenos)
+// D.2 a) y b) ListaDonaciones (copia la cabecera con los huecos rellenos)
 
 
-// D.3 CalculadoraNabos
+// D.3 ConfiguradorReforma
 
 
-// D.4 TarjetaVecino (y la data class, si decides usar una)
+// D.4 FilaVecino (y la data class, si decides usar una)
 
 
 
@@ -196,43 +225,51 @@ fun PruebaAnimalCrossing() {
 
 /*
  * Cuando tengas los componentes, BORRA la función de arriba y
- * DESCOMENTA la de abajo. Si los parámetros de tu TarjetaVecino no son los
+ * DESCOMENTA la de abajo. Si los parámetros de tu FilaVecino no son los
  * mismos, adapta las llamadas de la pestaña "D.4".
 
 @Composable
 fun PruebaAnimalCrossing() {
     PruebaPorApartados(
         "D.1 · D.2" to {
-            TituloPrueba("D.1 · ChipAmistad")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Amistad.entries.forEach { ChipAmistad(it) }
+            TituloPrueba("D.1 · AvatarEspecie")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Especie.entries.forEach { AvatarEspecie(it) }
+                AvatarEspecie(Especie.PATO, tamano = 72.dp)
             }
-            ChipAmistad(Amistad.BAJA, texto = "Recién llegado")
-            Text("Amistad.desde(55) = ${Amistad.desde(55)}")
-            TituloPrueba("D.2 · SelectorVisitante")
-            var invitado by rememberSaveable { mutableStateOf<String?>("Sócrates") }
-            SelectorVisitante(
-                visitantes = listOf("Tendo", "Guindo", "Sócrates", "Ladino"),
-                invitado = invitado,
-                onInvitar = { invitado = it },
-                ausentes = listOf("Ladino"),
+            TituloPrueba("D.2 · ListaDonaciones")
+            var museo by rememberSaveable { mutableStateOf(setOf("Mariposa", "Luciérnaga")) }
+            ListaDonaciones(
+                bichos = listOf("Mariposa", "Escarabajo", "Luciérnaga", "Tarántula", "Libélula"),
+                marcados = museo,
+                onCambiar = { bicho, marcado -> museo = if (marcado) museo + bicho else museo - bicho },
+                maximo = 3,
             )
-            Text("Invitado hoy: ${invitado ?: "nadie"}")
+            Text("Para el museo: ${museo.joinToString().ifEmpty { "nada" }}")
         },
         "D.3" to {
-            TituloPrueba("D.3 · CalculadoraNabos")
+            TituloPrueba("D.3 · ConfiguradorReforma")
             var ultimo by rememberSaveable { mutableIntStateOf(0) }
-            CalculadoraNabos(onResultado = { ultimo = it })
+            ConfiguradorReforma(onResultado = { ultimo = it })
             Text("La pantalla ha recibido con onResultado: $ultimo")
-            TituloPrueba("Con precioSemana = 90")
-            CalculadoraNabos(precioSemana = 90)
+            TituloPrueba("Sin pasar onResultado (es opcional)")
+            ConfiguradorReforma()
         },
         "D.4" to {
-            TituloPrueba("D.4 · TarjetaVecino")
-            var puntos by rememberSaveable { mutableIntStateOf(10) }
-            TarjetaVecino("Canela", "Perro", puntos, onRegalar = { puntos = (puntos + 15).coerceAtMost(100) })
-            TarjetaVecino("Rosa", "Gato", 55, onRegalar = {})
-            TarjetaVecino("Gaspar", "Gato", 100, onRegalar = {})
+            TituloPrueba("D.4 · FilaVecino")
+            var invitados by rememberSaveable { mutableStateOf(setOf("Canela")) }
+            listOf(
+                Vecino("Canela", Especie.PERRO, "20 de diciembre", 80),
+                Vecino("Rosa", Especie.GATO, "16 de marzo", 10),
+                Vecino("Renato", Especie.RANA, "5 de julio", 45),
+            ).forEach { v ->
+                FilaVecino(
+                    vecino = v,
+                    invitado = v.nombre in invitados,
+                    onCambiarInvitado = { invitados = if (it) invitados + v.nombre else invitados - v.nombre },
+                )
+            }
+            Text("Invitados: ${invitados.joinToString().ifEmpty { "nadie" }}")
         },
     )
 }

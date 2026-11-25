@@ -1,24 +1,29 @@
 package es.dam.parted.ejercicios
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,155 +31,187 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 /*
  * ════════════════════════════════════════════════════════════════════
  *  PARTE D · COMPONENTES PROPIOS
- *  EJERCICIO 2 · Zelda · El inventario de Link            (3,2 puntos)
+ *  EJERCICIO 2 · Zelda · La cocina de Link                (3,2 puntos)
  * ════════════════════════════════════════════════════════════════════
  *
- *  Vas a crear el kit de componentes del inventario de un juego de
- *  aventuras. Escribe tu código en el bloque "✍ TU SOLUCIÓN".
+ *  Vas a crear el kit de componentes de la app de cocina y armas de Link.
+ *  Escribe tu código en el bloque "✍ TU SOLUCIÓN" de este fichero.
+ *  No hace falta tocar nada más.
  *
- *  ── D.1 · Rareza y ChipRareza ─────────────────────────────── (0,5) ──
+ *  ── D.1 · Elemento y AvatarElemento ───────────────────────── (0,5) ──
  *
- *  a) Crea un `enum class Rareza` con tres valores. Cada valor guarda su
- *     ETIQUETA y su COLOR:
+ *  a) Crea un `enum class Elemento` con cuatro valores. Cada valor guarda
+ *     su NOMBRE, su EMOJI y su COLOR:
  *
- *       Valor        Etiqueta      Color
- *       COMUN        "Común"       Color(0xFF757575)
- *       RARA         "Rara"        Color(0xFF2196F3)
- *       LEGENDARIA   "Legendaria"  Color(0xFF9C27B0)
+ *       Valor       Nombre        Emoji   Color
+ *       FUEGO       "Fuego"       🔥      Color(0xFFE53935)
+ *       HIELO       "Hielo"       ❄️      Color(0xFF29B6F6)
+ *       ELECTRICO   "Eléctrico"   ⚡      Color(0xFFFFB300)
+ *       NORMAL      "Normal"      🗡️      Color(0xFF757575)
  *
- *  b) Crea el componente `ChipRareza`: muestra la etiqueta con su color,
- *     dentro de una "píldora" con un fondo suave del mismo color.
- *     - Propiedad obligatoria: la rareza.
- *     - Opcionales: el texto (por defecto, la etiqueta) y el `modifier`.
+ *  b) Crea el componente `AvatarElemento`: un CÍRCULO con el emoji en el
+ *     centro, un fondo suave de su color y un borde de 2 dp de su color.
+ *
+ *         ╭────╮
+ *         │ 🔥 │    ← círculo de 48 dp; el emoji, a la mitad (24 sp)
+ *         ╰────╯
+ *
+ *     - Propiedad obligatoria: el elemento.
+ *     - Opcionales: el `modifier` y el tamaño (`Dp`, por defecto 48.dp).
+ *       El emoji mide la mitad del tamaño.
  *     - NO guarda estado propio.
- *     Uso: ChipRareza(Rareza.LEGENDARIA)
- *          ChipRareza(Rareza.RARA, texto = "Botín")
+ *     - TalkBack NO lee el emoji: lee el nombre del elemento ("Fuego").
+ *     Uso: AvatarElemento(Elemento.FUEGO)
+ *          AvatarElemento(Elemento.HIELO, tamano = 72.dp)
  *
- *  ── D.2 · SelectorArma ─────────────────────────────────────── (0,9) ──
+ *  ── D.2 · ListaIngredientes ────────────────────────────────── (0,9) ──
  *
- *  Una fila con las armas de Link para que el usuario equipe UNA:
+ *  Una lista de casillas para echar VARIOS ingredientes a la olla, con
+ *  un máximo:
  *
- *      ( Espada )  [ Arco ]  [ Escudo ]  [ Bumerán ]
- *         ↑ equipada (botón relleno)
- *      Escudo está roto: no se puede pulsar
+ *      Elegidos: 2 de 3
+ *      [x] Manzana
+ *      [ ] Seta vigorosa
+ *      [x] Miel
+ *      [ ] Trigo
+ *      Si ya hay 3 elegidos, los demás se ven desactivados.
  *
  *  a) Completa los huecos (______) de la cabecera:
  *
  *     @Composable
- *     fun SelectorArma(
- *         armas: List<______>,                // la lista de armas
- *         equipada: ______?,                  // puede no haber ninguna
- *         onEquipar: ______,                  // avisa del arma pulsada
- *         ______: Modifier = Modifier,
- *         rotas: ______ = emptyList(),        // armas rotas; por defecto, ninguna
+ *     fun ListaIngredientes(
+ *         ingredientes: ______<String>,           // todos los ingredientes
+ *         marcados: ______<String>,               // los elegidos, sin repetidos
+ *         onCambiar: (String, ______) -> ______,  // ingrediente y si queda marcado
+ *         modifier: Modifier = ______,
+ *         maximo: Int = ______,                   // por defecto, todos
  *     ) {
  *
  *  b) Escribe el contenido del componente:
- *     1. El arma equipada NO se guarda dentro: se avisa con `onEquipar`.
- *     2. La equipada es un `Button`; las demás, `OutlinedButton`. Las
- *        rotas no se pueden pulsar.
- *     3. El `modifier` se aplica a la fila.
- *     4. Para TalkBack, cada botón se anuncia como "Espada, equipada",
- *        "Escudo, rota" o "Arco, disponible".
+ *     1. Los ingredientes marcados NO se guardan dentro: se avisa con
+ *        `onCambiar`.
+ *     2. Arriba, el texto "Elegidos: N de M".
+ *     3. Cada ingrediente es una fila con un `Checkbox` y su nombre. Se
+ *        puede pulsar TODA la fila, no solo la casilla, y TalkBack la
+ *        anuncia como casilla de verificación.
+ *     4. Si ya hay `maximo` marcados, los que no están marcados se
+ *        desactivan (los marcados se pueden desmarcar siempre).
+ *     5. El `modifier` se aplica a la columna.
  *
- *  ── D.3 · CalculadoraDanio ─────────────────────────────────── (1,0) ──
+ *  ── D.3 · ConfiguradorReceta ───────────────────────────────── (1,0) ──
  *
- *  La lógica YA ESTÁ HECHA en la clase `Combate` (más abajo). Tú solo
+ *  La lógica YA ESTÁ HECHA en la clase `Cocina` (más abajo). Tú solo
  *  montas la interfaz y llamas a sus funciones. NO modifiques la clase.
  *
- *      ┌─────────────┐  ┌─────────────┐
- *      │ Ataque      │  │ Defensa     │
- *      └─────────────┘  └─────────────┘
- *      [ Espada ] [ Flecha ] [ Bomba ] [ Magia ]
- *      Daño: 18 ❤                      ( C )
+ *      ┌─────────────────────────────┐
+ *      │ Ingredientes                │
+ *      └─────────────────────────────┘
+ *      Intensidad del fuego: 2
+ *      ━━━━━━━━━━━━━●──────────────   (Slider de 1 a 3, solo enteros)
+ *      Añadir un hada                   (  ●)
+ *      Recupera: 9 ❤                  [ Restablecer ]
+ *      (con 3 ingredientes: 3·2 + 3 del hada)
  *
- *  1. Los dos campos solo dejan escribir lo que `esValido` acepta: si no
- *     es válido, el campo no cambia. Sale el teclado numérico.
- *  2. Cada botón calcula con `calcular` y muestra `formatear(...)`.
- *     Si el golpe no hace daño, se ve "Sin daño".
- *  3. "C" vacía los dos campos y pone el daño a 0.
- *  4. Con cada daño válido avisa hacia fuera con `onDanio`. Quien use
- *     la calculadora puede no pasar este evento.
- *  5. Lo escrito y el resultado no se pierden al girar el móvil.
- *  6. Acepta `modifier`.
+ *  1. El campo solo deja escribir lo que `esValido` acepta: si no es
+ *     válido, el campo no cambia. Sale el teclado numérico.
+ *  2. La intensidad se elige con un `Slider` de FUEGO_MIN a FUEGO_MAX que
+ *     solo se para en números enteros.
+ *  3. El hada es un `Switch` con su texto al lado; se puede pulsar toda
+ *     la fila.
+ *  4. NO hay botón de calcular: el resultado se ve siempre al día, con
+ *     `calcular` y `formatear`.
+ *  5. Cada vez que el usuario cambia algo y el resultado es válido, avisa
+ *     hacia fuera con `onResultado`. Quien use el configurador puede no
+ *     pasar este evento.
+ *  6. "Restablecer" vuelve a los valores iniciales (campo vacío, fuego
+ *     mínimo, sin hada).
+ *  7. Nada se pierde al girar el móvil. Acepta `modifier`.
  *
- *  ── D.4 · TarjetaObjeto ────────────────────────────────────── (0,8) ──
+ *  ── D.4 · FilaArma ─────────────────────────────────────────── (0,8) ──
  *
  *  Tú decides sus parámetros.
  *
- *    ┌──────────────────────────────┐  ┌──────────────────────────────┐
- *    │ Espada Maestra  [Legendaria] │  │ Palo de madera      [Común]  │
- *    │ Repele el mal                │  │ Mejor que nada               │
- *    │ ████░░░░░░░░░░░░░░░░         │  │ ░░░░░░░░░░░░░░░░░░░░░░░      │
- *    │ Quedan 3 usos     (rojo)     │  │ Roto                         │
- *    │                    [ Usar ]  │  │                    [ Roto ]  │
- *    └──────────────────────────────┘  └──────────────────────────────┘
+ *    ┌───────────────────────────────────────┐
+ *    │ (🗡️) Espada maestra            (  ●)  │  ← plegada
+ *    │      ▼ Ver detalles                   │
+ *    └───────────────────────────────────────┘
+ *    ┌───────────────────────────────────────┐
+ *    │ (🔥) Vara de fuego             (●  )  │  ← desplegada
+ *    │      ▲ Ocultar                        │
+ *    │ Ataque: 10 · Usos: 2                  │
+ *    │ ¡A punto de romperse!        (rojo)   │
+ *    └───────────────────────────────────────┘
  *
- *  - Muestra el nombre del objeto, su rareza (chip de la D.1) y su
- *    descripción.
- *  - La barra indica la durabilidad que le QUEDA (usos que quedan / usos
- *    máximos).
- *  - Debajo: "Quedan N usos". Si quedan 3 o menos, en el color de error
- *    del tema. Si no queda ninguno, pone "Roto".
- *  - El botón "Usar" avisa a la pantalla. Si está roto, el botón pone
- *    "Roto" y no se puede pulsar.
+ *  - Cabecera: el avatar de su elemento (D.1), el nombre y un `Switch`
+ *    que dice si Link la lleva equipada. Qué armas van equipadas lo
+ *    decide la PANTALLA: la fila solo avisa.
+ *  - Al pulsar la cabecera se despliega o pliega el detalle. Eso solo le
+ *    importa a la fila: lo guarda ella y no se pierde al girar.
+ *  - Detalle: "Ataque: A · Usos: U" y debajo "Aguanta U golpes más". Si
+ *    le quedan 3 usos o menos, en su lugar pone "¡A punto de romperse!"
+ *    con el color de error del tema.
+ *  - TalkBack: la cabecera anuncia su acción ("Ver detalles" u
+ *    "Ocultar detalles") y el `Switch` se anuncia como "Equipada".
  * ════════════════════════════════════════════════════════════════════
  */
 
 // ─── Código que te dan (NO lo modifiques) ────────────────────────────
 
-class Combate {
+class Cocina {
 
-    // Convierte el texto de un campo en número entero. null si no lo es.
+    // Límites del Slider del fuego.
+    val FUEGO_MIN = 1
+    val FUEGO_MAX = 3
+
+    // Convierte el texto del campo en número entero. null si no lo es.
     fun aNumero(texto: String): Int? = texto.toIntOrNull()
 
-    // true si el texto se puede dejar escrito: vacío o un número de 0 a 999.
-    fun esValido(texto: String): Boolean = texto.isEmpty() || (aNumero(texto) ?: -1) in 0..999
+    // true si el texto se puede dejar escrito: vacío o una sola cifra.
+    fun esValido(texto: String): Boolean = texto.isEmpty() || (texto.length == 1 && aNumero(texto) != null)
 
-    // Daño del golpe según el arma: "Espada", "Flecha", "Bomba" o "Magia".
-    // Un campo vacío cuenta como 0. La Magia ignora la defensa.
-    // Devuelve null si el golpe no hace daño (0 o menos).
-    fun calcular(arma: String, ataque: String, defensa: String): Int? {
-        val a = aNumero(ataque) ?: 0
-        val d = aNumero(defensa) ?: 0
-        val danio = when (arma) {
-            "Espada" -> a - d
-            "Flecha" -> (a - d) * 3 / 2
-            "Bomba" -> a * 2 - d
-            "Magia" -> a
-            else -> 0
-        }
-        return if (danio <= 0) null else danio
+    // Corazones que recupera el plato. El campo vacío cuenta como 0.
+    // Devuelve null si los ingredientes no están entre 1 y 5.
+    fun calcular(ingredientes: String, fuego: Int, conHada: Boolean): Int? {
+        val i = aNumero(ingredientes) ?: 0
+        if (i !in 1..5) return null
+        val hada = if (conHada) 3 else 0
+        return i * fuego + hada
     }
 
-    // Texto para mostrar: "Sin daño" si es null y "N ❤" si no.
-    fun formatear(valor: Int?): String = if (valor == null) "Sin daño" else "$valor ❤"
+    // Texto para mostrar: "Pon entre 1 y 5 ingredientes" si es null y "N ❤" si no.
+    fun formatear(valor: Int?): String = if (valor == null) "Pon entre 1 y 5 ingredientes" else "$valor ❤"
 }
 
 // ─── ✍ TU SOLUCIÓN ───────────────────────────────────────────────────
 
-// D.1 a) enum class Rareza
+// D.1 a) enum class Elemento
 
 
-// D.1 b) ChipRareza
+// D.1 b) AvatarElemento
 
 
-// D.2 a) y b) SelectorArma (copia la cabecera con los huecos rellenos)
+// D.2 a) y b) ListaIngredientes (copia la cabecera con los huecos rellenos)
 
 
-// D.3 CalculadoraDanio
+// D.3 ConfiguradorReceta
 
 
-// D.4 TarjetaObjeto (y la data class, si decides usar una)
+// D.4 FilaArma (y la data class, si decides usar una)
 
 
 
@@ -187,47 +224,51 @@ fun PruebaZelda() {
 
 /*
  * Cuando tengas los componentes, BORRA la función de arriba y
- * DESCOMENTA la de abajo. Si los parámetros de tu TarjetaObjeto no son los
+ * DESCOMENTA la de abajo. Si los parámetros de tu FilaArma no son los
  * mismos, adapta las llamadas de la pestaña "D.4".
 
 @Composable
 fun PruebaZelda() {
     PruebaPorApartados(
         "D.1 · D.2" to {
-            TituloPrueba("D.1 · ChipRareza")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Rareza.entries.forEach { ChipRareza(it) }
+            TituloPrueba("D.1 · AvatarElemento")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Elemento.entries.forEach { AvatarElemento(it) }
+                AvatarElemento(Elemento.HIELO, tamano = 72.dp)
             }
-            ChipRareza(Rareza.RARA, texto = "Botín")
-            TituloPrueba("D.2 · SelectorArma")
-            var equipada by rememberSaveable { mutableStateOf<String?>("Espada") }
-            SelectorArma(
-                armas = listOf("Espada", "Arco", "Escudo", "Bumerán"),
-                equipada = equipada,
-                onEquipar = { equipada = it },
-                rotas = listOf("Escudo"),
+            TituloPrueba("D.2 · ListaIngredientes")
+            var olla by rememberSaveable { mutableStateOf(setOf("Manzana", "Miel")) }
+            ListaIngredientes(
+                ingredientes = listOf("Manzana", "Seta vigorosa", "Carne cruda", "Miel", "Trigo"),
+                marcados = olla,
+                onCambiar = { ingrediente, marcado -> olla = if (marcado) olla + ingrediente else olla - ingrediente },
+                maximo = 3,
             )
-            Text("Link lleva: ${equipada ?: "nada"}")
+            Text("En la olla: ${olla.joinToString().ifEmpty { "nada" }}")
         },
         "D.3" to {
-            TituloPrueba("D.3 · CalculadoraDanio")
+            TituloPrueba("D.3 · ConfiguradorReceta")
             var ultimo by rememberSaveable { mutableIntStateOf(0) }
-            CalculadoraDanio(onDanio = { ultimo = it })
-            Text("La pantalla ha recibido con onDanio: $ultimo")
+            ConfiguradorReceta(onResultado = { ultimo = it })
+            Text("La pantalla ha recibido con onResultado: $ultimo")
+            TituloPrueba("Sin pasar onResultado (es opcional)")
+            ConfiguradorReceta()
         },
         "D.4" to {
-            TituloPrueba("D.4 · TarjetaObjeto")
-            var usos by rememberSaveable { mutableIntStateOf(5) }
-            TarjetaObjeto(
-                nombre = "Espada Maestra",
-                rareza = Rareza.LEGENDARIA,
-                descripcion = "Repele el mal",
-                usos = usos,
-                usosMax = 20,
-                onUsar = { usos-- },
-            )
-            TarjetaObjeto("Arco real", Rareza.RARA, "Dispara tres flechas", 12, 15, onUsar = {})
-            TarjetaObjeto("Palo de madera", Rareza.COMUN, "Mejor que nada", 0, 8, onUsar = {})
+            TituloPrueba("D.4 · FilaArma")
+            var equipadas by rememberSaveable { mutableStateOf(setOf("Espada maestra")) }
+            listOf(
+                Arma("Espada maestra", Elemento.NORMAL, 30, 40),
+                Arma("Vara de fuego", Elemento.FUEGO, 10, 2),
+                Arma("Lanza eléctrica", Elemento.ELECTRICO, 18, 12),
+            ).forEach { a ->
+                FilaArma(
+                    arma = a,
+                    equipada = a.nombre in equipadas,
+                    onCambiarEquipada = { equipadas = if (it) equipadas + a.nombre else equipadas - a.nombre },
+                )
+            }
+            Text("Equipadas: ${equipadas.joinToString().ifEmpty { "ninguna" }}")
         },
     )
 }

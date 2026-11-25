@@ -38,9 +38,9 @@ import es.dam.parted.ejercicios.PruebaZelda
 
 private val ejercicios: List<Pair<String, @Composable () -> Unit>> = listOf(
     "1 · Mario Kart · El torneo de karts" to { PruebaMarioKart() },
-    "2 · Zelda · El inventario de Link" to { PruebaZelda() },
-    "3 · FIFA · Ultimate Team" to { PruebaFifa() },
-    "4 · Valorant · La selección de agentes" to { PruebaValorant() },
+    "2 · Zelda · La cocina de Link" to { PruebaZelda() },
+    "3 · FIFA · El director deportivo" to { PruebaFifa() },
+    "4 · Valorant · La economía del equipo" to { PruebaValorant() },
     "5 · Animal Crossing · La isla" to { PruebaAnimalCrossing() },
 )
 

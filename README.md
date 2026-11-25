@@ -4,10 +4,10 @@ Cinco ejercicios con el **mismo formato que la Parte D del examen práctico**: p
 
 | Apartado | Qué programas | Puntos |
 |---|---|---|
-| D.1 | Un `enum class` con etiqueta y color, y un **chip** que lo muestra | 0,5 |
-| D.2 | Un **selector de selección única** sin estado (completas la cabecera y escribes el cuerpo) | 0,9 |
-| D.3 | Una **calculadora** que usa una clase de lógica que ya te dan | 1 |
-| D.4 | Una **tarjeta** con barra de progreso y botón (tú decides sus parámetros) | 0,8 |
+| D.1 | Un `enum class` con nombre, emoji y color, y un **avatar circular** que lo muestra | 0,5 |
+| D.2 | Una **lista de casillas de selección múltiple** con máximo, sin estado (completas la cabecera y escribes el cuerpo) | 0,9 |
+| D.3 | Un **configurador** con campo, `Slider` y `Switch` y resultado siempre al día, que usa una clase de lógica que ya te dan | 1 |
+| D.4 | Una **fila desplegable** con un `Switch` (tú decides sus parámetros) | 0,8 |
 
 > Lo que se valora es lo mismo que en el examen: **dónde está el estado**, **cómo se propagan los eventos** y **si el componente es reutilizable** (`modifier`, parámetros opcionales, colores del tema, semántica para TalkBack).
 
@@ -17,11 +17,11 @@ Cada ejercicio es un fichero `.kt` en `app/src/main/java/es/dam/parted/ejercicio
 
 | Fichero | Temática | El kit de componentes |
 |---|---|---|
-| `Ejercicio1MarioKart.kt` | Mario Kart | Cilindrada, selector de circuito, calculadora de puntos, tarjeta de piloto |
-| `Ejercicio2Zelda.kt` | Zelda | Rareza, selector de arma, calculadora de daño, tarjeta de objeto |
-| `Ejercicio3Fifa.kt` | FIFA | Demarcación, selector de formación, calculadora de mercado, tarjeta de jugador |
-| `Ejercicio4Valorant.kt` | Valorant | Rol, selector de mapa, calculadora de créditos, tarjeta de agente |
-| `Ejercicio5AnimalCrossing.kt` | Animal Crossing | Amistad, selector de visitante, calculadora de nabos, tarjeta de vecino |
+| `Ejercicio1MarioKart.kt` | Mario Kart | Avatar de objeto, lista de circuitos, configurador del kart, fila de piloto |
+| `Ejercicio2Zelda.kt` | Zelda | Avatar de elemento, lista de ingredientes, configurador de receta, fila de arma |
+| `Ejercicio3Fifa.kt` | FIFA | Avatar de posición, lista de convocados, configurador de fichaje, fila de jugador |
+| `Ejercicio4Valorant.kt` | Valorant | Avatar de rol, lista de armas, configurador de ronda, fila de agente |
+| `Ejercicio5AnimalCrossing.kt` | Animal Crossing | Avatar de especie, lista de donaciones, configurador de reforma, fila de vecino |
 
 En cada fichero tienes:
 
@@ -36,14 +36,7 @@ En cada fichero tienes:
 2. **Primero escribe los componentes en papel**, como en el examen. No te fíes del autocompletado: en el examen no lo tendrás (sí tendrás la hoja de referencia).
 3. Pásalos al bloque `✍ TU SOLUCIÓN` y descomenta la pantalla de prueba del final del fichero. Si tus parámetros de la D.4 no coinciden con los de la prueba, adapta esa llamada.
 4. Ejecuta la app. Hay un menú con los cinco ejercicios y, dentro de cada uno, una pestaña por apartado.
-5. Comprueba también que **al girar el móvil** no se pierde nada de la calculadora.
-
-La rama `soluciones` tiene los cinco ejercicios resueltos y comentados paso a paso.
-
-```bash
-git clone <url-de-este-repo>
-git switch soluciones   # para ver las soluciones
-```
+5. Comprueba también que **al girar el móvil** no se pierde nada del configurador ni de las filas desplegadas.
 
 ## Requisitos
 
